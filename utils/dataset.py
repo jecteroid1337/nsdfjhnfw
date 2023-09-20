@@ -1,9 +1,9 @@
 from torch.utils.data import Dataset
-from load import load_ct_data, ct_paths_sort_key
+from .load import load_ct_data, ct_paths_sort_key
 
 
 class CTSegmentationDataset(Dataset):
-    def __init__(self, data_folder):
+    def __init__(self, data_folder='./data/segmentation_data'):
         import glob
         import os
 
