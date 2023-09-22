@@ -1,6 +1,6 @@
 from lightning import pytorch as pl
 from utils.dataset import CTSegmentationDataset
-from models.models import UNet
+from core.models import UNet
 from torch.utils.data import DataLoader, random_split
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 
