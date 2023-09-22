@@ -54,8 +54,8 @@ class UNet(pl.LightningModule):
         return loss
 
     def on_train_epoch_end(self):
-        avg_loss = torch.stack([loss for (_, loss) in self.validation_step_outputs]).mean()
-        self.validation_step_outputs.clear()
+        avg_loss = torch.stack([loss for (_, loss) in self.training_step_outputs]).mean()
+        self.training_step_outputs.clear()
         self.log('train_loss', avg_loss, logger=False, prog_bar=True)
 
     def validation_step(self, batch, batch_nb):
