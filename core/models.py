@@ -56,7 +56,9 @@ class UNet(pl.LightningModule):
     def on_train_epoch_end(self):
         avg_loss = torch.stack([loss for (_, loss) in self.training_step_outputs]).mean()
         self.training_step_outputs.clear()
+        print(f'| Train_loss: {avg_loss:.2f}')
         self.log('train_loss', avg_loss, logger=False, prog_bar=True)
+
 
     def validation_step(self, batch, batch_nb):
         x, y = batch
@@ -69,6 +71,7 @@ class UNet(pl.LightningModule):
     def on_validation_epoch_end(self):
         avg_loss = torch.stack([loss for (_, loss) in self.validation_step_outputs]).mean()
         self.validation_step_outputs.clear()
+        print(f'[Epoch {self.trainer.current_epoch + 1:3}] Val_loss: {avg_loss:.2f}', end=' ')
         self.log('val_loss', avg_loss, logger=False, prog_bar=True)
 
     def configure_optimizers(self):
