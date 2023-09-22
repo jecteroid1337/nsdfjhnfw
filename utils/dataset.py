@@ -13,7 +13,7 @@ class CTSegmentationDataset(Dataset):
         image_paths = sorted(glob.glob(os.path.join(images_folder, '*.dcm')), key=ct_paths_sort_key)
         masks_paths = sorted(glob.glob(os.path.join(masks_folder, '*.nrrd')), key=ct_paths_sort_key)
 
-        self._items = list(zip(image_paths, masks_paths))[:10]
+        self._items = list(zip(image_paths, masks_paths))
 
     def __len__(self):
         return len(self._items)
