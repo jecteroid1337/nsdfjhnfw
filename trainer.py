@@ -13,7 +13,7 @@ def train(model, dataset, batch_size=4):
 
     train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=4, shuffle=False)
-    trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1, accelerator='cpu', callbacks=[
+    trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1, callbacks=[
         EarlyStopping(monitor='val_loss', mode='min', patience=10)
     ])
     trainer.fit(model, train_dataloader, val_dataloader)
