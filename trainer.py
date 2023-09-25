@@ -5,18 +5,21 @@ from torch.utils.data import DataLoader, random_split
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 
 
-def train(model, dataset):
-    train_len = int(0.85 * len(dataset))
+def train(model, dataset, train_fraction=0.8):
+    train_len = int(train_fraction * len(dataset))
     val_len = len(dataset) - train_len
-    print(f'{train_len=}, {val_len=}')
+    print(f'Train dataset size = {train_len}, Validation dataset size = {val_len}')
     train_dataset, val_dataset = random_split(dataset, [train_len, val_len])
 
     train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=4, shuffle=False)
+
     trainer = pl.Trainer(max_epochs=100, callbacks=[
         EarlyStopping(monitor='val_loss', mode='min', patience=10)
     ])
     trainer.fit(model, train_dataloader, val_dataloader)
+
+    return train_dataset, val_dataset
 
 
 def main():

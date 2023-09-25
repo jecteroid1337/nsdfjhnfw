@@ -46,8 +46,7 @@ class UNet(pl.LightningModule):
         x, y = batch
         y_hat = self.forward(x)
 
-        loss_function = F.cross_entropy if self.n_classes > 1 else F.binary_cross_entropy
-        loss = loss_function(y_hat, y)
+        loss = (1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y) + self.dice_loss_impact * dice_loss(y_hat, y)
 
         self.training_step_outputs.append((y_hat, loss))
 
@@ -59,19 +58,19 @@ class UNet(pl.LightningModule):
         print(f'| Train_loss: {avg_loss:.2f}')
         self.log('train_loss', avg_loss, logger=False, prog_bar=True)
 
-
     def validation_step(self, batch, batch_nb):
         x, y = batch
         y_hat = self.forward(x)
-        loss = F.cross_entropy(y_hat, y) if self.n_classes > 1 else \
-            F.binary_cross_entropy_with_logits(y_hat, y)
+
+        loss = ((1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y) +
+                self.dice_loss_impact * dice_loss(y_hat, y))
 
         self.validation_step_outputs.append((y_hat, loss))
 
     def on_validation_epoch_end(self):
         avg_loss = torch.stack([loss for (_, loss) in self.validation_step_outputs]).mean()
         self.validation_step_outputs.clear()
-        print(f'[Epoch {self.trainer.current_epoch + 1:3}] Val_loss: {avg_loss:.2f}', end=' ')
+        print(f'[Epoch {self.trainer.current_epoch + 1:3}] Val_loss: {avg_loss:.3f}', end=' ')
         self.log('val_loss', avg_loss, logger=False, prog_bar=True)
 
     def configure_optimizers(self):
