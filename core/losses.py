@@ -96,7 +96,8 @@ class DiceLoss(nn.Module):
     def forward(
             self,
             input: torch.Tensor,
-            target: torch.Tensor) -> torch.Tensor:
+            target: torch.Tensor,
+            ignore_index=0) -> torch.Tensor:
         if not torch.is_tensor(input):
             raise TypeError("Input type is not a torch.Tensor. Got {}"
                             .format(type(input)))
@@ -110,6 +111,7 @@ class DiceLoss(nn.Module):
             raise ValueError(
                 "input and target must be in the same device. Got: {}" .format(
                     input.device, target.device))
+
         # compute softmax over the classes axis
         input_soft = F.softmax(input, dim=1)
 
@@ -117,10 +119,12 @@ class DiceLoss(nn.Module):
         target_one_hot = one_hot(target, num_classes=input.shape[1],
                                  device=input.device, dtype=input.dtype)
 
+        not_ignored_mask = target != ignore_index
+
         # compute the actual dice score
         dims = (1, 2, 3)
-        intersection = torch.sum(input_soft * target_one_hot, dims)
-        cardinality = torch.sum(input_soft + target_one_hot, dims)
+        intersection = torch.sum(input_soft * target_one_hot * not_ignored_mask, dims)
+        cardinality = torch.sum(input_soft + target_one_hot * not_ignored_mask, dims)
 
         dice_score = 2. * intersection / (cardinality + self.eps)
         return torch.mean(1. - dice_score)
@@ -131,7 +135,7 @@ class DiceLoss(nn.Module):
 ######################
 
 
-def dice_loss(input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    return DiceLoss()(input, target)
+def dice_loss(input: torch.Tensor, target: torch.Tensor, ignore_index: int = -100) -> torch.Tensor:
+    return DiceLoss()(input, target, ignore_index=ignore_index)
 
 

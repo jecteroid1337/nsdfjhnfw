@@ -46,7 +46,13 @@ class UNet(pl.LightningModule):
         x, y = batch
         y_hat = self.forward(x)
 
-        loss = (1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y) + self.dice_loss_impact * dice_loss(y_hat, y)
+        if self.dice_loss_impact == 0.0:
+            loss = F.cross_entropy(y_hat, y, ignore_index=0)
+        elif self.dice_loss_impact == 1.0:
+            loss = dice_loss(y_hat, y, ignore_index=0)
+        else:
+            loss = ((1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y, ignore_index=0) +
+                    self.dice_loss_impact * dice_loss(y_hat, y, ignore_index=0))
 
         self.training_step_outputs.append((y_hat, loss))
 
@@ -55,15 +61,20 @@ class UNet(pl.LightningModule):
     def on_train_epoch_end(self):
         avg_loss = torch.stack([loss for (_, loss) in self.training_step_outputs]).mean()
         self.training_step_outputs.clear()
-        print(f'| Train_loss: {avg_loss:.2f}')
+        print(f'| Train_loss: {avg_loss:.3f}')
         self.log('train_loss', avg_loss, logger=False, prog_bar=True)
 
-    def validation_step(self, batch, batch_nb):
+    def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.forward(x)
 
-        loss = ((1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y) +
-                self.dice_loss_impact * dice_loss(y_hat, y))
+        if self.dice_loss_impact == 0.0:
+            loss = F.cross_entropy(y_hat, y, ignore_index=0)
+        elif self.dice_loss_impact == 1.0:
+            loss = dice_loss(y_hat, y, ignore_index=0)
+        else:
+            loss = ((1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y, ignore_index=0) +
+                    self.dice_loss_impact * dice_loss(y_hat, y, ignore_index=0))
 
         self.validation_step_outputs.append((y_hat, loss))
 
