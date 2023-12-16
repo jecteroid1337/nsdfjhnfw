@@ -74,7 +74,6 @@ class DiceLoss(nn.Module):
 
         \text{loss}(x, class) = 1 - \text{Dice}(x, class)
 
-    [1] https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient
 
     Shape:
         - Input: :math:`(N, C, H, W)` where C = number of classes.
@@ -121,12 +120,11 @@ class DiceLoss(nn.Module):
 
 
         # compute the actual dice score
-        dims = (1, 2, 3)
-        intersection = torch.sum(input_soft * target_one_hot, dims)
-        cardinality = torch.sum(input_soft + target_one_hot, dims)
+        intersection = torch.sum(input_soft * target_one_hot, (2, 3))
+        cardinality = torch.sum(input_soft + target_one_hot, (2, 3))
 
         dice_score = 2. * intersection / (cardinality + self.eps)
-        return torch.mean(1. - dice_score)
+        return torch.mean(1. - torch.mean(dice_score, dim=1))
 
 
 ######################
