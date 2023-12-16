@@ -3,7 +3,7 @@ from .load import load_ct_data, ct_paths_sort_key
 
 
 class CTSegmentationDataset(Dataset):
-    def __init__(self, data_folder='./data/segmentation_data'):
+    def __init__(self, data_folder='./data/segmentation_data', train=True):
         import glob
         import os
 
@@ -19,17 +19,16 @@ class CTSegmentationDataset(Dataset):
         return len(self._items)
 
     def __getitem__(self, index):
-        import torchvision
-        torchvision.disable_beta_transforms_warning()
         import torchvision.transforms.v2 as transforms
         import torch
 
         image_conversion_transform = transforms.Compose([
-            transforms.ToImageTensor(),
-            transforms.ConvertImageDtype(torch.float32),
-            transforms.Normalize([-824.8447361975601], [778.8566926962736])
+            transforms.ToImage(),
+            transforms.ToDtype(torch.float32, scale=False),
+            transforms.Normalize([-607.6368604278564], [471.41841392312153])
         ])
 
         image, mask = load_ct_data(self._items[index])
-        mask = torch.LongTensor(mask)
-        return image_conversion_transform(image), mask
+        image, mask = image_conversion_transform(image), torch.LongTensor(mask)
+
+        return image, mask

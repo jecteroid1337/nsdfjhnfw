@@ -7,9 +7,6 @@ class UNet(pl.LightningModule):
     def __init__(self, n_channels=1, n_classes=3, *, bilinear=True, dice_loss_impact=0.0):
         super().__init__()
 
-        self.training_step_outputs = []
-        self.validation_step_outputs = []
-
         self.n_channels = n_channels
         self.n_classes = n_classes
 
@@ -29,6 +26,9 @@ class UNet(pl.LightningModule):
         self.up4 = UNetUpBlock(64 + 64, 64, bilinear)
         self.out = nn.Conv2d(64, self.n_classes, kernel_size=1)
 
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+
     def forward(self, x):
         x1 = self.initial(x)
         x2 = self.down1(x1)
@@ -47,12 +47,12 @@ class UNet(pl.LightningModule):
         y_hat = self.forward(x)
 
         if self.dice_loss_impact == 0.0:
-            loss = F.cross_entropy(y_hat, y, ignore_index=0)
+            loss = F.cross_entropy(y_hat, y)
         elif self.dice_loss_impact == 1.0:
-            loss = dice_loss(y_hat, y, ignore_index=0)
+            loss = dice_loss(y_hat, y)
         else:
-            loss = ((1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y, ignore_index=0) +
-                    self.dice_loss_impact * dice_loss(y_hat, y, ignore_index=0))
+            loss = ((1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y) +
+                    self.dice_loss_impact * dice_loss(y_hat, y))
 
         self.training_step_outputs.append((y_hat, loss))
 
@@ -69,12 +69,12 @@ class UNet(pl.LightningModule):
         y_hat = self.forward(x)
 
         if self.dice_loss_impact == 0.0:
-            loss = F.cross_entropy(y_hat, y, ignore_index=0)
+            loss = F.cross_entropy(y_hat, y)
         elif self.dice_loss_impact == 1.0:
-            loss = dice_loss(y_hat, y, ignore_index=0)
+            loss = dice_loss(y_hat, y)
         else:
-            loss = ((1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y, ignore_index=0) +
-                    self.dice_loss_impact * dice_loss(y_hat, y, ignore_index=0))
+            loss = ((1 - self.dice_loss_impact) * F.cross_entropy(y_hat, y) +
+                    self.dice_loss_impact * dice_loss(y_hat, y))
 
         self.validation_step_outputs.append((y_hat, loss))
 
@@ -85,12 +85,13 @@ class UNet(pl.LightningModule):
         self.log('val_loss', avg_loss, logger=False, prog_bar=True)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-2)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-2)
 
         lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                                   mode='min',
                                                                   factor=0.2,
                                                                   patience=5,
+                                                                  min_lr=1e-5,
                                                                   verbose=True)
         lr_dict = {
             "scheduler": lr_scheduler,

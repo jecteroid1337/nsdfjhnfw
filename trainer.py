@@ -7,20 +7,19 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 
 
 def train(model, dataset, n_epochs=100, batch_size=4, train_fraction=0.8):
-    val_len = int((1 - train_fraction) * len(dataset))
-    train_len = len(dataset) - val_len
+    train_len = int(train_fraction * len(dataset))
+    val_len = len(dataset) - train_len
+
     print(f'\nTrain dataset size = {train_len}, Validation dataset size = {val_len}\n')
     train_dataset, val_dataset = random_split(dataset, [train_len, val_len])
 
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, persistent_workers=True, num_workers=4)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False,  persistent_workers=True, num_workers=4)
 
-    callbacks = [EarlyStopping(monitor='val_loss', mode='min', patience=10), ]
+    callbacks = [EarlyStopping(monitor='val_loss', mode='min', patience=10),
+                 ModelCheckpoint(save_top_k=2, monitor='val_loss')]
 
-    checkpoint_callback = ModelCheckpoint(save_top_k=2, monitor='val_loss')
-    callbacks.append(checkpoint_callback)
-    
-    trainer = pl.Trainer(max_epochs=n_epochs, callbacks=callbacks)
+    trainer = pl.Trainer(max_epochs=n_epochs, callbacks=callbacks, log_every_n_steps=20)
 
     trainer.fit(model, train_dataloader, val_dataloader)
 
@@ -28,10 +27,9 @@ def train(model, dataset, n_epochs=100, batch_size=4, train_fraction=0.8):
 
 
 def main():
-    model = UNet(n_channels=1, n_classes=3, dice_loss_impact=1.0)
+    model = UNet(n_channels=1, n_classes=3)
     dataset = CTSegmentationDataset('./data/segmentation_data')
-    dataset._items = dataset._items[:10]
-    train(model, dataset, batch_size=1)
+    train(model, dataset, batch_size=4)
 
 
 if __name__ == '__main__':
