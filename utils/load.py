@@ -8,10 +8,12 @@ def ct_paths_sort_key(s: str) -> int:
 
 def load_ct_data(path: Tuple[str, str]):
     from pydicom import dcmread
+    from pydicom.pixel_data_handlers import apply_modality_lut
     from nrrd import read
 
     image_path, mask_path = path
-    image = dcmread(image_path).pixel_array.astype(np.float32)[..., None]
+    dicom = dcmread(image_path)
+    image = np.clip(apply_modality_lut(dicom.pixel_array.astype(np.float32)[..., None], dicom), -1024., None)
     mask = read(mask_path)[0]
 
     return image, mask

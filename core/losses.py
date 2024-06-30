@@ -49,9 +49,10 @@ def one_hot(labels: torch.Tensor,
     if num_classes < 1:
         raise ValueError("The number of classes must be bigger than one."
                          " Got: {}".format(num_classes))
+
     batch_size, height, width = labels.shape
     one_hotted = torch.zeros(batch_size, num_classes, height, width, device=device, dtype=dtype)
-    return one_hotted.scatter_(1, labels.unsqueeze(1), 1.0) + eps
+    return one_hotted.scatter_(1, labels.unsqueeze(1), 1.0)
 
 
 class DiceLoss(nn.Module):
@@ -73,7 +74,6 @@ class DiceLoss(nn.Module):
 
         \text{loss}(x, class) = 1 - \text{Dice}(x, class)
 
-    [1] https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient
 
     Shape:
         - Input: :math:`(N, C, H, W)` where C = number of classes.
@@ -96,8 +96,7 @@ class DiceLoss(nn.Module):
     def forward(
             self,
             input: torch.Tensor,
-            target: torch.Tensor,
-            ignore_index=0) -> torch.Tensor:
+            target: torch.Tensor) -> torch.Tensor:
         if not torch.is_tensor(input):
             raise TypeError("Input type is not a torch.Tensor. Got {}"
                             .format(type(input)))
@@ -119,15 +118,13 @@ class DiceLoss(nn.Module):
         target_one_hot = one_hot(target, num_classes=input.shape[1],
                                  device=input.device, dtype=input.dtype)
 
-        not_ignored_mask = target != ignore_index
 
         # compute the actual dice score
-        dims = (1, 2, 3)
-        intersection = torch.sum(input_soft * target_one_hot * not_ignored_mask, dims)
-        cardinality = torch.sum(input_soft + target_one_hot * not_ignored_mask, dims)
+        intersection = torch.sum(input_soft * target_one_hot, (2, 3))
+        cardinality = torch.sum(input_soft + target_one_hot, (2, 3))
 
         dice_score = 2. * intersection / (cardinality + self.eps)
-        return torch.mean(1. - dice_score)
+        return torch.mean(1. - torch.mean(dice_score, dim=1))
 
 
 ######################
@@ -136,6 +133,6 @@ class DiceLoss(nn.Module):
 
 
 def dice_loss(input: torch.Tensor, target: torch.Tensor, ignore_index: int = -100) -> torch.Tensor:
-    return DiceLoss()(input, target, ignore_index=ignore_index)
+    return DiceLoss()(input, target)
 
 
