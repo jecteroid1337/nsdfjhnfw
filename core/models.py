@@ -89,7 +89,7 @@ class UNet(pl.LightningModule):
 
         lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                                                                   mode='min',
-                                                                  factor=0.2,
+                                                                  factor=0.5,
                                                                   patience=5,
                                                                   min_lr=1e-5,
                                                                   verbose=True)

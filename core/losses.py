@@ -118,7 +118,6 @@ class DiceLoss(nn.Module):
         target_one_hot = one_hot(target, num_classes=input.shape[1],
                                  device=input.device, dtype=input.dtype)
 
-
         # compute the actual dice score
         intersection = torch.sum(input_soft * target_one_hot, (2, 3))
         cardinality = torch.sum(input_soft + target_one_hot, (2, 3))

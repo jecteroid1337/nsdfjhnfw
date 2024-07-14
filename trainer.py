@@ -13,8 +13,8 @@ def train(model, dataset, n_epochs=100, batch_size=4, train_fraction=0.8):
     print(f'\nTrain dataset size = {train_len}, Validation dataset size = {val_len}\n')
     train_dataset, val_dataset = random_split(dataset, [train_len, val_len])
 
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, persistent_workers=True, num_workers=4)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False,  persistent_workers=True, num_workers=4)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, persistent_workers=True, num_workers=2)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False,  persistent_workers=True, num_workers=2)
 
     callbacks = [EarlyStopping(monitor='val_loss', mode='min', patience=10),
                  ModelCheckpoint(save_top_k=2, monitor='val_loss')]
